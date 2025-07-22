@@ -71,12 +71,12 @@ resource "aws_dynamodb_table" "terraform_lock" {
 
 
 # Placeholder for Remote Backend (configured dynamically later)
-terraform {
-  backend "s3" {
-    bucket         = ""  # Passed via -backend-config
-    key            = "terraform.tfstate"  # State file path in S3
-    region         = ""
-    dynamodb_table = ""
-    encrypt        = true  # Encrypt state in transit and at rest
-  }
-}
+# terraform {
+#   backend "s3" {
+#     bucket         = ""  # Passed via -backend-config
+#     key            = "terraform.tfstate"  # State file path in S3
+#     region         = ""
+#     dynamodb_table = ""
+#     encrypt        = true  # Encrypt state in transit and at rest
+#   }
+# }
