@@ -1,0 +1,35 @@
+name: Terraform Plan
+on:
+  pull_request:
+    branches: [main]
+    paths: ['**.tf', 'variables.tf']
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.TF_AWS_ROLE }}
+          role-session-name: terraform-plan
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with: 
+            terraform_version: 1.5.0
+      - run: terraform fmt -check
+      - run: terraform init
+      - run: terraform validate
+      - id: plan
+        run: terraform plan -out=tfplan
+      - uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `Terraform Plan:\n<details><summary>Details</summary>\n\`\`\`hcl\n${process.env.PLAN}\n\`\`\`</details>`;
+            github.rest.issues.createComment({issue_number: context.issue.number, owner: context.repo.owner, repo: context.repo.repo, body: output});
+        env:
+          PLAN: ${{ steps.plan.outputs.stdout }}
