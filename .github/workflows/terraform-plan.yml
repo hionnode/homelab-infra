@@ -36,11 +36,24 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with: 
             terraform_version: 1.5.0
-      - run: terraform fmt -check
-      - run: terraform init
-      - run: terraform validate
-      - id: plan
+      # - name: List files in repository
+      #   run: ls -R
+      - name: Terraform Format Check
+        run: terraform fmt -check
+        working-directory: infra  
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: infra  
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: infra 
+
+      - name: Terraform Plan
+        id: plan
         run: terraform plan -out=tfplan
+        working-directory: infra  
       - uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
