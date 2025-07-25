@@ -15,6 +15,16 @@ jobs:
         uses: actions/checkout@v4
       - name: Print Role to Assume
         run: echo "Attempting to assume role ${{ vars.TF_AWS_ROLE }}"
+      - name: 🐞 Debug OIDC Token
+        id: oidc
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = await core.getIDToken()
+            const [header, payload, signature] = token.split('.')
+            const decodedPayload = JSON.parse(Buffer.from(payload, 'base64').toString('utf-8'))
+            console.log(JSON.stringify(decodedPayload, null, 2))
+            return
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
