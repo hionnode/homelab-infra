@@ -26,11 +26,5 @@ resource "aws_s3_bucket_public_access_block" "example" {
 }
 
 terraform {
-  backend "s3" {
-    bucket         = ""
-    key            = "my-infra-project/terraform.tfstate"
-    region         = ""
-    dynamodb_table = ""
-    encrypt        = true
-  }
+  backend "s3" {} 
 }

@@ -43,8 +43,13 @@ jobs:
         working-directory: infra  
 
       - name: Terraform Init
-        run: terraform init
-        working-directory: infra  
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ vars.S3_BUCKET}}" \
+            -backend-config="key=my-infra-project/terraform.tfstate" \
+            -backend-config="region=${{ vars.AWS_REGION}}" \
+            -backend-config="dynamodb_table=${{ vars.DYNAMODB_TABLE}}"
+        working-directory: infra # Or whatever your folder is named 
 
       - name: Terraform Validate
         run: terraform validate
