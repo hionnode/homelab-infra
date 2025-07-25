@@ -26,5 +26,5 @@ resource "aws_s3_bucket_public_access_block" "example" {
 }
 
 terraform {
-  backend "s3" {} 
+  backend "s3" {}
 }
