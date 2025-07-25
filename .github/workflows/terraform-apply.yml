@@ -31,6 +31,7 @@ jobs:
           role-to-assume: ${{ vars.TF_AWS_ROLE }}
           role-session-name: terraform-apply
           aws-region: ${{ vars.AWS_REGION }}
+          audience: sts.amazonaws.com
       - uses: hashicorp/setup-terraform@v3
         with: 
             terraform_version: 1.5.0
