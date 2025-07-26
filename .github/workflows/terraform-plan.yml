@@ -1,0 +1,75 @@
+name: Terraform Plan
+on:
+  pull_request:
+    branches: [main]
+    paths: ['**.tf', 'variables.tf']
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    environment: prod
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Print Role to Assume
+        run: echo "Attempting to assume role ${{ vars.TF_AWS_ROLE }}"
+      - name: 🐞 Debug OIDC Token
+        id: oidc
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = await core.getIDToken()
+            const [header, payload, signature] = token.split('.')
+            const decodedPayload = JSON.parse(Buffer.from(payload, 'base64').toString('utf-8'))
+            console.log(JSON.stringify(decodedPayload, null, 2))
+            return
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.TF_AWS_ROLE }}
+          role-session-name: terraform-apply
+          aws-region: ${{ vars.AWS_REGION }}
+          audience: sts.amazonaws.com
+      - uses: hashicorp/setup-terraform@v3
+        with: 
+            terraform_version: 1.5.0
+      # - name: List files in repository
+      #   run: ls -R
+      - name: Terraform Format Check
+        run: terraform fmt -check
+        working-directory: infra  
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ vars.S3_BUCKET}}" \
+            -backend-config="key=my-infra-project/terraform.tfstate" \
+            -backend-config="region=${{ vars.AWS_REGION}}" \
+            -backend-config="dynamodb_table=${{ vars.DYNAMODB_TABLE}}"
+        working-directory: infra # Or whatever your folder is named 
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: infra 
+
+      - name: Terraform Plan
+        id: plan
+        env:
+          TF_VAR_bucket_name: ${{ vars.S3_BUCKET }}
+          TF_VAR_dynamodb_table_name: ${{ vars.DYNAMODB_TABLE }}
+          TF_VAR_project_name: "homelab-infra" # Or make this a GitHub var
+          TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+        run: terraform plan -out=tfplan
+        working-directory: infra  
+      - uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `Terraform Plan:\n<details><summary>Details</summary>\n\`\`\`hcl\n${process.env.PLAN}\n\`\`\`</details>`;
+            github.rest.issues.createComment({issue_number: context.issue.number, owner: context.repo.owner, repo: context.repo.repo, body: output});
+        env:
+          PLAN: ${{ steps.plan.outputs.stdout }}
