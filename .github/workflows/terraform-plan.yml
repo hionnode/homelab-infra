@@ -57,8 +57,11 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        env: 
-          TF_LOG: DEBUG
+        env:
+          TF_VAR_bucket_name: ${{ vars.S3_BUCKET }}
+          TF_VAR_dynamodb_table_name: ${{ vars.DYNAMODB_TABLE }}
+          TF_VAR_project_name: "homelab-infra" # Or make this a GitHub var
+          TF_VAR_aws_region: ${{ vars.AWS_REGION }}
         run: terraform plan -out=tfplan
         working-directory: infra  
       - uses: actions/github-script@v6
