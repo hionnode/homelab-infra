@@ -32,6 +32,16 @@ variable "runner_version" {
   default = "2.311.0"
 }
 
+variable "cores" {
+  type    = number
+  default = 2
+}
+
+variable "memory" {
+  type    = number
+  default = 4096
+}
+
 source "proxmox-clone" "github-runner" {
   # Proxmox connection
   proxmox_url              = var.proxmox_url
@@ -40,14 +50,14 @@ source "proxmox-clone" "github-runner" {
   insecure_skip_tls_verify = true
   
   # Template settings
-  template_name     = "ubuntu-22.04-standard_22.04-1_amd64"
+  template_name     = "rocky-9"
   template_storage  = "local"
   
   # Container settings
   container_id      = "999"  # Temporary ID for building
   hostname          = "github-runner-template"
-  cores             = 2
-  memory            = 4096
+  cores             = var.cores
+  memory            = var.memory
   storage           = "local-lvm"
   disk_size         = "20G"
   
@@ -58,7 +68,7 @@ source "proxmox-clone" "github-runner" {
   }
   
   # Container type
-  os                = "ubuntu"
+  os                = "rocky"
   unprivileged      = true
   
   # SSH settings for provisioning
@@ -72,9 +82,8 @@ build {
   # Update system
   provisioner "shell" {
     inline = [
-      "apt-get update",
-      "apt-get upgrade -y",
-      "apt-get install -y curl wget git build-essential software-properties-common jq"
+      "dnf update -y",
+      "dnf install -y curl wget git jq"
     ]
   }
   
@@ -91,17 +100,17 @@ build {
   # Install Node.js
   provisioner "shell" {
     inline = [
-      "curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -",
-      "apt-get install -y nodejs"
+      "curl -fsSL https://rpm.nodesource.com/setup_lts.x | bash -",
+      "dnf install -y nodejs"
     ]
   }
   
   # Install additional tools commonly needed
   provisioner "shell" {
     inline = [
-      "apt-get install -y python3 python3-pip",
+      "dnf install -y python3 python3-pip",
       "pip3 install --upgrade pip",
-      "apt-get install -y awscli"
+      "dnf install -y awscli"
     ]
   }
   
@@ -155,8 +164,7 @@ build {
   # Cleanup
   provisioner "shell" {
     inline = [
-      "apt-get autoremove -y",
-      "apt-get autoclean",
+      "dnf clean all",
       "rm -rf /tmp/*",
       "rm -rf /var/tmp/*",
       "history -c"
